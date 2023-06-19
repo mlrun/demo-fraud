@@ -1,13 +1,7 @@
 import mlrun
 from kfp import dsl
+from mlrun import build_function, deploy_function, import_function, run_function
 from mlrun.model import HyperParamOptions
-
-from mlrun import (
-    build_function,
-    deploy_function,
-    import_function,
-    run_function,
-)
 
 
 @dsl.pipeline(
