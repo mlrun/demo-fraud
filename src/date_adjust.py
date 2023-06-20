@@ -41,5 +41,5 @@ def adjust_data_timespan(
             x, data_max, new_max, old_data_period, new_data_period
         )
     )
-    df.sort_values(by='timestamp', inplace=True)
+    df.sort_values(by='timestamp', axis=0, inplace=True)
     return df
