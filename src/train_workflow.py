@@ -1,7 +1,13 @@
 import mlrun
 from kfp import dsl
-from mlrun import build_function, deploy_function, import_function, run_function
 from mlrun.model import HyperParamOptions
+
+from mlrun import (
+    build_function,
+    deploy_function,
+    import_function,
+    run_function,
+)
 
 
 @dsl.pipeline(
@@ -11,9 +17,10 @@ from mlrun.model import HyperParamOptions
 def kfpipeline(vector_name="transactions-fraud"):
     project = mlrun.get_current_project()
 
+    feature_selection_fn = mlrun.import_function('hub://feature_selection')
     # Feature selection
     feature_selection = run_function(
-        "feature_selection",
+        feature_selection_fn,
         name="feature_selection",
         params={
             "output_vector_name": "short",
