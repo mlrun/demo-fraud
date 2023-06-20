@@ -1,6 +1,7 @@
 # Helper functions to adjust the timestamps of our data
 # while keeping the order of the selected events and
 # the relative distance from one event to the other
+import pandas as pd
 
 
 def date_adjustment(sample, data_max, new_max, old_data_period, new_data_period):
@@ -40,4 +41,5 @@ def adjust_data_timespan(
             x, data_max, new_max, old_data_period, new_data_period
         )
     )
+    df.sort_values(by='timestamp', inplace=True)
     return df
