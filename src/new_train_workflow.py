@@ -25,7 +25,6 @@ def pipeline(
         vector_name="transactions-fraud",
         features=[],
         label_column="is_error",
-        model_name="fraud_detection",
 ):
     project = mlrun.get_current_project()
     # Get FeatureVector
@@ -42,10 +41,9 @@ def pipeline(
     )
 
     
-    # feature_selection_fn = mlrun.import_function('hub://feature_selection')
     # Feature selection
     feature_selection = mlrun.run_function(
-        "feature-selection",
+        "hub://feature_selection",
         name="feature-selection",
         params={
             "output_vector_name": "short",
@@ -67,7 +65,7 @@ def pipeline(
 
     # train with hyper-paremeters
     train = mlrun.run_function(
-        "train",
+        "hub://auto_trainer",
         name="train",
         handler="train",
         params={
@@ -87,14 +85,14 @@ def pipeline(
                 "sklearn.ensemble.AdaBoostClassifier",
             ],
         },
-        hyper_param_options=HyperParamOptions(selector="max.accuracy"),
+        hyper_param_options=HyperParamOptions(strategy="list", selector="max.accuracy"),
         inputs={"dataset": feature_selection.outputs["top_features_vector"]},
         outputs=["model", "test_set"],
     )
 
     # test and visualize your model
     test = mlrun.run_function(
-        "train",
+        "hub://auto_trainer",
         name="evaluate",
         handler="evaluate",
         params={
@@ -105,8 +103,10 @@ def pipeline(
         inputs={"dataset": train.outputs["test_set"]},
     )
 
-    serving_function = project.get_function("serving")
-    
+    # Create a serverless function from the hub, add a feature enrichment router
+    # This will enrich and impute the request with data from the feature vector
+    serving_function = mlrun.import_function("hub://v2_model_server", 
+                                             new_name="serving")
     serving_function.set_topology(
         "router",
         mlrun.serving.routers.EnrichmentModelRouter(
@@ -114,7 +114,9 @@ def pipeline(
             impute_policy={"*": "$mean"}),
             exist_ok=True
     )
+    # Enable model monitoring
     serving_function.set_tracking()
+    serving_function.save()
 
     # deploy your model as a serverless function, you can pass a list of models to serve
     deploy = mlrun.deploy_function(

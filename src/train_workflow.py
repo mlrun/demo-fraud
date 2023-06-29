@@ -14,13 +14,13 @@ from mlrun import (
     name="Fraud Detection Pipeline",
     description="Detecting fraud from a transactions dataset",
 )
-def kfpipeline(vector_name="transactions-fraud"):
+def pipeline(vector_name="transactions-fraud"):
     project = mlrun.get_current_project()
 
     feature_selection_fn = mlrun.import_function('hub://feature_selection')
     # Feature selection
     feature_selection = run_function(
-        feature_selection_fn,
+        'hub://feature_selection',
         name="feature_selection",
         params={
             "output_vector_name": "short",
