@@ -20,7 +20,7 @@ from mlrun.model import HyperParamOptions
 
 # Create a Kubeflow Pipelines pipeline
 @dsl.pipeline(name="Fraud Detection Pipeline",description="Detecting fraud from a transactions dataset",)
-def pipeline( vector_name="transactions-fraud", features=[], label_column="is_error",):
+def pipeline( vector_name="transactions-fraud", features=[], label_column="is_error"):
     project = mlrun.get_current_project() # Get FeatureVector
     get_vector = mlrun.run_function(
         "hub://get_offline_features",
