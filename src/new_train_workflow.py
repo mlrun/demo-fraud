@@ -27,8 +27,8 @@ def pipeline( vector_name="transactions-fraud", features=[], label_column="is_er
         name="get_vector",
         params={'feature_vector': vector_name,
         'features': features,
-        'label_feature': label_column, "entity_timestamp_column": "timestamp", 'target': {'name': 'parquet', 'kind': 'parquet'}, "update_stats": True},
-        outputs=["feature_vector"],
+        'label_feature': label_column, 'target': {'name': 'parquet', 'kind': 'parquet'}, "update_stats": True},
+        outputs=["feature_vector", 'target'],
     )
     # Feature selection
     feature_selection = mlrun.run_function(
@@ -40,7 +40,7 @@ def pipeline( vector_name="transactions-fraud", features=[], label_column="is_er
         "min_votes": 2,
         "ignore_type_errors": True,
         }, 
-        inputs={"df_artifact": get_vector.outputs['feature_vector']},
+        inputs={"df_artifact": project.get_artifact_uri(get_vector.outputs['feature_vector'], "feature-vector")},
         outputs=[
         "feature_scores",
         "selected_features_count",
