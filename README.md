@@ -32,8 +32,9 @@ Following the ingestion, we will create a feature vector, select the most releva
 ```{toctree}
 :maxdepth: 1
 
-01-ingest-datasources
-02-create-training-model
-03-deploy-serving-model
-04-pipeline
+01-exploratory-data-analysis
+02-interactive-data-prep
+03-ingest-with-feature-store
+04-train-test-pipeline
+05-real-time-serving-pipeline
 ```
