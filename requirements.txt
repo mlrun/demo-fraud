@@ -1,5 +1,5 @@
 scikit-learn~=1.0
-mlrun
+mlrun~=1.4.0rc19
 plotly~=5.4
 matplotlib~=3.0
 seaborn~=0.11.0
