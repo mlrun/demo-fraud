@@ -29,9 +29,7 @@ We will walk through creation of ingestion pipeline for each data source with al
 
 Following the ingestion, we will create a feature vector, select the most relevant features and create a final model. We will then deploy the model and showcase the feature vector and model serving.
 
-```{toctree}
-:maxdepth: 1
-
+```
 01-exploratory-data-analysis
 02-interactive-data-prep
 03-ingest-with-feature-store
