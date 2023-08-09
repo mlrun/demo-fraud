@@ -32,7 +32,7 @@ def prepare_data_to_train(transactions_data_p, user_events_data_p, labels_set):
 def train_and_val(X_train, X_test, y_train, y_test):
     grid_search = {'bootstrap': [True, False],
                    'max_depth': [10, 30, 50, 100,],
-                   'max_features': ['sqrt'],
+                   'max_features': ['log2', 'sqrt'],
                    'min_samples_leaf': [1, 2, 4],
                    'min_samples_split': [2, 5, 10],
                    'n_estimators': [50, 100, 500]}
