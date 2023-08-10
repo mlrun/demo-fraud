@@ -14,7 +14,7 @@ def setup(
     project.set_source(project.get_param("source"), pull_at_runtime=True)
 
     if project.get_param("pre_load_data"):
-        continue
+        print("pre_load_data")
 
 
     # Set the training workflow:

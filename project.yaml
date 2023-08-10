@@ -23,7 +23,7 @@ spec:
   conda: ''
   source: git@github.com:pengwei715/demo-fraud.git#refs/heads/feature/align_with_book
   origin_url: git@github.com:pengwei715/demo-fraud.git#refs/heads/feature/align_with_book
-  pre_load_data: false
+  pre_load_data: False
   desired_state: online
   owner: pengw
   build:
