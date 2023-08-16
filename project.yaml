@@ -1,0 +1,34 @@
+kind: project
+metadata:
+  name: fraud-demo-pengw
+  created: '2023-08-04T18:02:33.655000'
+spec:
+  params:
+    label_column: label
+  functions:
+  - url: hub://feature_selection
+    name: feature-selection
+  - url: hub://auto_trainer
+    name: train
+  - url: hub://v2_model_server
+    name: serving
+  - url: hub://get_offline_features
+    name: get-vector
+  - url: hub://auto_trainer
+    name: evaluate
+  workflows:
+  - path: src/new_train_workflow.py
+    name: main
+  artifacts: []
+  conda: ''
+  source: git@github.com:pengwei715/demo-fraud.git#refs/heads/feature/align_with_book
+  origin_url: git@github.com:pengwei715/demo-fraud.git#refs/heads/feature/align_with_book
+  pre_load_data: False
+  desired_state: online
+  owner: pengw
+  build:
+    commands: []
+    requirements: []
+  custom_packagers: []
+status:
+  state: online

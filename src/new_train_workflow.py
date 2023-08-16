@@ -19,28 +19,24 @@ from mlrun.model import HyperParamOptions
 
 
 # Create a Kubeflow Pipelines pipeline
-@dsl.pipeline(name="Fraud Detection Pipeline",
-    description="Detecting fraud from a transactions dataset",)
-def pipeline(
-        vector_name="transactions-fraud",
-        features=[],
-        label_column="is_error",
-):
-    project = mlrun.get_current_project()
-    # Get FeatureVector
+@dsl.pipeline(
+    name="Fraud Detection Pipeline",
+    description="Detecting fraud from a transactions dataset",
+)
+def pipeline(vector_name="transactions-fraud", features=[], label_column="is_error"):
+    project = mlrun.get_current_project()  # Get FeatureVector
     get_vector = mlrun.run_function(
         "hub://get_offline_features",
         name="get_vector",
-        params={'feature_vector': vector_name,
-                'features': features,
-                'label_feature': label_column,
-                "entity_timestamp_column": "timestamp",
-                'target': {'name': 'parquet', 'kind': 'parquet'},
-                "update_stats": True},
-        outputs=["feature_vector"],
+        params={
+            "feature_vector": vector_name,
+            "features": features,
+            "label_feature": label_column,
+            "target": {"name": "parquet", "kind": "parquet"},
+            "update_stats": True,
+        },
+        outputs=["feature_vector", "target"],
     )
-
-    
     # Feature selection
     feature_selection = mlrun.run_function(
         "hub://feature_selection",
@@ -53,7 +49,9 @@ def pipeline(
             "ignore_type_errors": True,
         },
         inputs={
-            "df_artifact": project.get_artifact_uri(get_vector.outputs['feature_vector'], "feature-vector")
+            "df_artifact": project.get_artifact_uri(
+                get_vector.outputs["feature_vector"], "feature-vector"
+            )
         },
         outputs=[
             "feature_scores",
@@ -62,7 +60,6 @@ def pipeline(
             "selected_features",
         ],
     )
-
     # train with hyper-paremeters
     train = mlrun.run_function(
         "hub://auto_trainer",
@@ -85,11 +82,12 @@ def pipeline(
                 "sklearn.ensemble.AdaBoostClassifier",
             ],
         },
-        hyper_param_options=HyperParamOptions(strategy="list", selector="max.accuracy"),
+        hyper_param_options=HyperParamOptions(
+            strategy="list", selector="max.accuracy"
+        ),
         inputs={"dataset": feature_selection.outputs["top_features_vector"]},
         outputs=["model", "test_set"],
     )
-
     # test and visualize your model
     test = mlrun.run_function(
         "hub://auto_trainer",
@@ -102,23 +100,22 @@ def pipeline(
         },
         inputs={"dataset": train.outputs["test_set"]},
     )
-
     # Create a serverless function from the hub, add a feature enrichment router
     # This will enrich and impute the request with data from the feature vector
-    serving_function = mlrun.import_function("hub://v2_model_server", 
-                                             new_name="serving")
+    serving_function = mlrun.import_function(
+        "hub://v2_model_server", new_name="serving"
+    )
     serving_function.set_topology(
         "router",
         mlrun.serving.routers.EnrichmentModelRouter(
-            feature_vector_uri="short",
-            impute_policy={"*": "$mean"}),
-            exist_ok=True
+            feature_vector_uri="short", impute_policy={"*": "$mean"}
+        ),
+        exist_ok=True,
     )
     # Enable model monitoring
     serving_function.set_tracking()
     serving_function.save()
-
-    # deploy your model as a serverless function, you can pass a list of models to serve
+    # deploy the model server, pass a list of trained models to serve
     deploy = mlrun.deploy_function(
         serving_function,
         models=[{"key": "fraud", "model_path": train.outputs["model"]}],
