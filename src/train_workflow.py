@@ -136,5 +136,5 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
     # deploy the model server, pass a list of trained models to serve
     deploy = project.deploy_function(
         serving_func,
-        models=[{"key": "fraud", "model_path": train.outputs["model"]}],
+        models=[{"key": "fraud", "model_path": train_run.outputs["model"]}],
     ).after(train_run)
