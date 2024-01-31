@@ -24,22 +24,33 @@ from mlrun.model import HyperParamOptions
     description="Detecting fraud from a transactions dataset",
 )
 def pipeline(vector_name="transactions-fraud", features=[], label_column="is_error"):
-    project = mlrun.get_current_project()  # Get FeatureVector
-    get_vector = mlrun.run_function(
-        "hub://get_offline_features",
-        name="get_vector",
-        params={
+    """
+    add the doc string
+    """
+    
+    # Get the project
+    project = mlrun.get_current_project()  
+
+    # Get FeatureVector
+    get_vector_func = project.get_function("get-vector")
+    get_vector_run = project.run_function(
+        get_vector_func,
+        name="get-vector",
+        inputs={
             "feature_vector": vector_name,
             "features": features,
             "label_feature": label_column,
             "target": {"name": "parquet", "kind": "parquet"},
             "update_stats": True,
         },
-        outputs=["feature_vector", "target"],
+        #returns = [
+        #    "feature_vector: dataset", "target: dataset"
+        #    ]
     )
+
     # Feature selection
-    feature_selection = mlrun.run_function(
-        "hub://feature_selection",
+    feature_selection_func = project.get_function("feature-selection")
+    feature_selection_run = project.run_function(
         name="feature-selection",
         params={
             "output_vector_name": "short",
@@ -50,19 +61,21 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
         },
         inputs={
             "df_artifact": project.get_artifact_uri(
-                get_vector.outputs["feature_vector"], "feature-vector"
+                get_vector_run.outputs["feature_vector"], "feature-vector"
             )
         },
-        outputs=[
-            "feature_scores",
-            "selected_features_count",
-            "top_features_vector",
-            "selected_features",
-        ],
-    )
+        #outputs=[
+        #    "feature_scores",
+        #    "selected_features_count",
+        #    "top_features_vector",
+        #    "selected_features",
+        #],
+    ).after(get_vector_run)
+
     # train with hyper-paremeters
-    train = mlrun.run_function(
-        "hub://auto_trainer",
+    train_func = project.get_function("train")
+    train_run = project.run_function(
+        train_func,
         name="train",
         handler="train",
         params={
@@ -86,11 +99,13 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
             strategy="list", selector="max.accuracy"
         ),
         inputs={"dataset": feature_selection.outputs["top_features_vector"]},
-        outputs=["model", "test_set"],
-    )
+        #outputs=["model", "test_set"],
+    ).after(feature_selection_run)
+
     # test and visualize your model
-    test = mlrun.run_function(
-        "hub://auto_trainer",
+    test_func = project.get_function("evaluate")
+    test_run = mlrun.run_function(
+        test_func,
         name="evaluate",
         handler="evaluate",
         params={
@@ -99,13 +114,12 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
             "drop_columns": project.get_param("label_column", "label"),
         },
         inputs={"dataset": train.outputs["test_set"]},
-    )
+    ).after(train_run)
+
     # Create a serverless function from the hub, add a feature enrichment router
     # This will enrich and impute the request with data from the feature vector
-    serving_function = mlrun.import_function(
-        "hub://v2_model_server", new_name="serving"
-    )
-    serving_function.set_topology(
+    serving_func = project.get_function("serving")
+    serving_func.set_topology(
         "router",
         mlrun.serving.routers.EnrichmentModelRouter(
             feature_vector_uri="short", impute_policy={"*": "$mean"}
@@ -113,10 +127,10 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
         exist_ok=True,
     )
     # Enable model monitoring
-    serving_function.set_tracking()
-    serving_function.save()
+    serving_func.set_tracking()
+    serving_func.save()
     # deploy the model server, pass a list of trained models to serve
-    deploy = mlrun.deploy_function(
-        serving_function,
+    deploy = project.deploy_function(
+        serving_func,
         models=[{"key": "fraud", "model_path": train.outputs["model"]}],
-    )
+    ).after(train_run)
