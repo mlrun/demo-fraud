@@ -102,7 +102,7 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
         hyper_param_options=HyperParamOptions(
             strategy="list", selector="max.accuracy"
         ),
-        inputs={"dataset": feature_selection.outputs["top_features_vector"]},
+        inputs={"dataset": feature_selection_run.outputs["top_features_vector"]},
         outputs=["model", "test_set"],
     ).after(feature_selection_run)
 
