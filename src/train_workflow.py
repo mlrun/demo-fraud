@@ -1,4 +1,4 @@
-# Copyright 2019 Iguazio
+# Copyright 2024 Iguazio
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,7 +25,12 @@ from mlrun.model import HyperParamOptions
 )
 def pipeline(vector_name="transactions-fraud", features=[], label_column="is_error"):
     """
-    add the doc string
+    This pipeline will train a model to detect fraud from a transactions dataset.
+    :param vector_name: The name of the feature vector to use
+    :param features: A list of features to use
+    :param label_column: The name of the label column
+
+    :returns: None
     """
     
     # Get the project
