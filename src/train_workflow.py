@@ -114,10 +114,10 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
         handler="evaluate",
         params={
             "label_columns": project.get_param("label_column", "label"),
-            "model": train.outputs["model"],
+            "model": train_run.outputs["model"],
             "drop_columns": project.get_param("label_column", "label"),
         },
-        inputs={"dataset": train.outputs["test_set"]},
+        inputs={"dataset": train_run.outputs["test_set"]},
     ).after(train_run)
 
     # Create a serverless function from the hub, add a feature enrichment router
