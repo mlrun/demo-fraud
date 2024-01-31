@@ -43,6 +43,9 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
             "target": {"name": "parquet", "kind": "parquet"},
             "update_stats": True,
         },
+        outputs = [
+            "feature_vector", "target"
+        ]
         #returns = [
         #    "feature_vector: dataset", "target: dataset"
         #    ]
@@ -64,12 +67,12 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
                 get_vector_run.outputs["feature_vector"], "feature-vector"
             )
         },
-        #outputs=[
-        #    "feature_scores",
-        #    "selected_features_count",
-        #    "top_features_vector",
-        #    "selected_features",
-        #],
+        outputs=[
+            "feature_scores",
+            "selected_features_count",
+            "top_features_vector",
+            "selected_features",
+        ],
     ).after(get_vector_run)
 
     # train with hyper-paremeters
@@ -99,7 +102,7 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
             strategy="list", selector="max.accuracy"
         ),
         inputs={"dataset": feature_selection.outputs["top_features_vector"]},
-        #outputs=["model", "test_set"],
+        outputs=["model", "test_set"],
     ).after(feature_selection_run)
 
     # test and visualize your model
