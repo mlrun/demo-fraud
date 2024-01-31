@@ -54,6 +54,7 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
     # Feature selection
     feature_selection_func = project.get_function("feature-selection")
     feature_selection_run = project.run_function(
+        feature_selection_func,
         name="feature-selection",
         params={
             "output_vector_name": "short",
