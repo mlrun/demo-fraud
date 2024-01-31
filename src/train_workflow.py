@@ -36,7 +36,7 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
     get_vector_run = project.run_function(
         get_vector_func,
         name="get-vector",
-        inputs={
+        params={
             "feature_vector": vector_name,
             "features": features,
             "label_feature": label_column,
@@ -46,9 +46,6 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
         outputs = [
             "feature_vector", "target"
         ]
-        #returns = [
-        #    "feature_vector: dataset", "target: dataset"
-        #    ]
     )
 
     # Feature selection
