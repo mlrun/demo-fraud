@@ -13,12 +13,10 @@
 # limitations under the License.
 
 
-
 import mlrun
 
-def setup(
-        project: mlrun.projects.MlrunProject
-) -> mlrun.projects.MlrunProject:
+
+def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
     """
     Creating the project for this demo. This function is expected to be called automatically when
     calling the function `mlrun.get_or_create_project`.
@@ -37,11 +35,10 @@ def setup(
     # Refresh MLRun hub to the most up-to-date version:
     mlrun.get_run_db().get_hub_catalog(source_name="default", force_refresh=True)
 
-
     # Set the functions:
     _set_function(
         project=project,
-        func = "hub://get_offline_features",
+        func="hub://get_offline_features",
         name="get-vector",
         kind="job",
     )
@@ -70,7 +67,7 @@ def setup(
         project=project,
         func="hub://v2_model_server",
         name="serving",
-        kind="job",
+        kind="serving",
     )
 
     # Set the training workflow:
@@ -82,32 +79,23 @@ def setup(
 
 
 def _set_function(
-        project: mlrun.projects.MlrunProject,
-        func: str,
-        name: str,
-        kind: str,
-        gpus: int = 0,
-        node_name: str = None,
-        image: str = None,
+    project: mlrun.projects.MlrunProject,
+    func: str,
+    name: str,
+    kind: str,
+    node_name: str = None,
+    image: str = None,
 ):
     # Set the given function:
     with_repo = not func.startswith("hub://")
     mlrun_function = project.set_function(
-        func=func, name=name, kind=kind, with_repo=with_repo, image=image,
+        func=func,
+        name=name,
+        kind=kind,
+        with_repo=with_repo,
+        image=image,
     )
-
-    # Configure GPUs according to the given kind:
-    if gpus >= 1:
-        mlrun_function.with_node_selection(node_selector={"app.iguazio.com/node-group": "added-t4"})
-        if kind == "mpijob":
-            # 1 GPU for each rank:
-            mlrun_function.with_limits(gpus=1)
-            mlrun_function.spec.replicas = gpus
-        else:
-            # All GPUs for the single job:
-            mlrun_function.with_limits(gpus=gpus)
-    # Set the node selection:
-    elif node_name:
+    if node_name:
         mlrun_function.with_node_selection(node_name=node_name)
     # Save:
     mlrun_function.save()
