@@ -133,7 +133,7 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
         exist_ok=True,
     )
     # Enable model monitoring
-    serving_func.set_tracking()
+    # serving_func.set_tracking()
     serving_func.save()
     # deploy the model server, pass a list of trained models to serve
     deploy = project.deploy_function(
