@@ -38,13 +38,6 @@ def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
     # Set the functions:
     _set_function(
         project=project,
-        func="hub://get_offline_features",
-        name="get-vector",
-        kind="job",
-    )
-
-    _set_function(
-        project=project,
         func="hub://feature_selection",
         name="feature-selection",
         kind="job",
