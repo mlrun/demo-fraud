@@ -49,10 +49,10 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
             "update_stats": True,
         },
         outputs = [
-            "feature_vector", "target"
+            "feature_vector"
         ]
     )
-
+    
     # Feature selection
     feature_selection_func = project.get_function("feature-selection")
     feature_selection_run = project.run_function(
@@ -66,9 +66,7 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
             "ignore_type_errors": True,
         },
         inputs={
-            "df_artifact": project.get_artifact_uri(
-                get_vector_run.outputs["feature_vector"], "feature-vector"
-            )
+            "df_artifact": project.get_artifact_uri(vector_name, "feature-vector")
         },
         outputs=[
             "feature_scores",
