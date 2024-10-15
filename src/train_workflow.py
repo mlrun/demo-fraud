@@ -131,8 +131,8 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
         exist_ok=True,
     )
     # Enable model monitoring. Uncomment 2 lines below if needed 
-    # serving_func.set_tracking()
-    # project.set_model_monitoring_credentials(None, "v3io", "v3io", "v3io")
+    serving_func.set_tracking()
+    project.set_model_monitoring_credentials(None, "v3io", "v3io", "v3io")
     serving_func.save()
     # deploy the model server, pass a list of trained models to serve
     deploy = project.deploy_function(
