@@ -36,6 +36,14 @@ def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
     mlrun.get_run_db().get_hub_catalog(source_name="default", force_refresh=True)
 
     # Set the functions:
+    
+    project.set_function(
+        func="src/get_vector.py",
+        name="get-vector",
+        handler="get_offline_features",
+        kind="job",
+    ).save()
+    
     _set_function(
         project=project,
         func="hub://feature_selection",
