@@ -41,6 +41,7 @@ def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
         func="src/get_vector.py",
         name="get-vector",
         handler="get_offline_features",
+        image="mlrun/mlrun",
         kind="job",
     ).save()
     
