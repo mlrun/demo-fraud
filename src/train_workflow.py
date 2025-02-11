@@ -16,6 +16,7 @@ import mlrun
 from kfp import dsl
 
 from mlrun.model import HyperParamOptions
+from mlrun.datastore.datastore_profile import DatastoreProfileV3io
 
 
 # Create a Kubeflow Pipelines pipeline
@@ -130,9 +131,27 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
         ),
         exist_ok=True,
     )
-    # Enable model monitoring. Uncomment 2 lines below if needed 
+    # Enable model monitoring. Uncomment lines below if needed 
+    # Create and register TSDB profile
+    tsdb_profile = DatastoreProfileV3io(
+        name="my-v3io-tsdb",
+    )
+    project.register_datastore_profile(tsdb_profile)
+
+    # Create and register stream profile
+    stream_profile = DatastoreProfileV3io(
+        name="my-v3io-stream",
+        v3io_access_key=mlrun.mlconf.get_v3io_access_key(),
+    )
+    project.register_datastore_profile(stream_profile)
+
+    # Enable model monitoring
     serving_func.set_tracking()
-    project.set_model_monitoring_credentials(None, "v3io", "v3io")
+
+    project.set_model_monitoring_credentials(
+        tsdb_profile_name=tsdb_profile.name,
+        stream_profile_name=stream_profile.name,
+    )
     serving_func.save()
     # deploy the model server, pass a list of trained models to serve
     deploy = project.deploy_function(
