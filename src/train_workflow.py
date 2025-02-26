@@ -49,10 +49,10 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
             "update_stats": True,
         },
         outputs = [
-            "feature_vector", "target"
+            "feature_vector"
         ]
     )
-
+    
     # Feature selection
     feature_selection_func = project.get_function("feature-selection")
     feature_selection_run = project.run_function(
@@ -61,14 +61,12 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
         params={
             "output_vector_name": "short",
             "label_column": project.get_param("label_column", "label"),
-            "k": 18,
+            "k": 25,
             "min_votes": 2,
             "ignore_type_errors": True,
         },
         inputs={
-            "df_artifact": project.get_artifact_uri(
-                get_vector_run.outputs["feature_vector"], "feature-vector"
-            )
+            "df_artifact": project.get_artifact_uri(vector_name, "feature-vector")
         },
         outputs=[
             "feature_scores",
@@ -132,8 +130,9 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
         ),
         exist_ok=True,
     )
-    # Enable model monitoring
-    serving_func.set_tracking()
+    # Enable model monitoring. Uncomment 2 lines below if needed 
+    # serving_func.set_tracking()
+    # project.set_model_monitoring_credentials(None, "v3io", "v3io", "v3io")
     serving_func.save()
     # deploy the model server, pass a list of trained models to serve
     deploy = project.deploy_function(
