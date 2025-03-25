@@ -14,7 +14,9 @@
 
 
 import mlrun
-
+import os
+from mlrun.datastore.datastore_profile import DatastoreProfileV3io, DatastoreProfileRedis
+from mlrun.datastore.targets import ParquetTarget, NoSqlTarget, RedisNoSqlTarget
 
 def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
     """
@@ -74,6 +76,9 @@ def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
     # Set the training workflow:
     project.set_workflow("main", "src/train_workflow.py")
 
+    # Set data source for feature store
+    _set_datasource(project)
+    
     # Save and return the project:
     project.save()
     return project
@@ -100,3 +105,28 @@ def _set_function(
         mlrun_function.with_node_selection(node_name=node_name)
     # Save:
     mlrun_function.save()
+
+
+def _set_datasource(project: mlrun.projects.MlrunProject):
+    # If running on community edition - use redis.
+    if not mlrun.mlconf.is_ce_mode():
+        online_target = 'nosql'
+    else:
+        redis_uri = os.environ.get('REDIS_URI', None)
+        redis_user = os.environ.get('REDIS_URI', None)
+        redis_password = os.environ.get('REDIS_URI', None)
+        assert redis_uri is not None, "ERROR - When running on community edition, redis endpoint is required to run fraud-demo."
+        
+        data_profile = DatastoreProfileRedis(name="fraud-dataprofile",
+                                             endpoint_url=redis_uri,
+                                             username=redis_user,
+                                             password=redis_password,
+                                             )
+        project.register_datastore_profile(data_profile)
+        online_target = RedisNoSqlTarget(path="ds://fraud-dataprofile")
+        
+    offline_target = ParquetTarget(name='parquet', path=mlrun.mlconf.artifact_path)
+    project.params['targets'] = [online_target, offline_target]
+    
+    
+    
