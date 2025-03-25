@@ -125,7 +125,7 @@ def _set_datasource(project: mlrun.projects.MlrunProject):
         project.register_datastore_profile(data_profile)
         online_target = RedisNoSqlTarget(path="ds://fraud-dataprofile")
 
-    for fs in ['transactions', 'user_events', 'labels']:
+    for fs in ['transactions', 'events', 'labels']:
         offline_target = ParquetTarget(name='parquet', path=os.path.join(mlrun.mlconf.artifact_path, fs + '.pq'))
         project.params[fs] = [online_target, offline_target]
     
