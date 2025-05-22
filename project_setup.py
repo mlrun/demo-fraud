@@ -43,6 +43,7 @@ def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
         handler="get_offline_features",
         kind="job",
     ).save()
+    project.set_function(f"db://{project.name}/get-vector", name="get-vector")
     
     _set_function(
         project=project,
@@ -72,7 +73,7 @@ def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
     )
 
     # Set the training workflow:
-    project.set_workflow("main", "src/train_workflow.py")
+    project.set_workflow("main", "src/train_workflow.py", embed=True)
 
     # Save and return the project:
     project.save()
@@ -100,3 +101,4 @@ def _set_function(
         mlrun_function.with_node_selection(node_name=node_name)
     # Save:
     mlrun_function.save()
+    project.set_function(f"db://{project.name}/{name}", name=name)
