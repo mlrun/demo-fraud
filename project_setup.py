@@ -72,7 +72,7 @@ def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
     )
 
     # Set the training workflow:
-    project.set_workflow("main", "src/train_workflow.py")
+    project.set_workflow("main", "src/train_workflow.py", embed=True)
 
     # Save and return the project:
     project.save()
