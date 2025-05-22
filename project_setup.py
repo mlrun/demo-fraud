@@ -43,6 +43,7 @@ def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
         handler="get_offline_features",
         kind="job",
     ).save()
+    project.set_function(f"db://{project.name}/get-vector", name="get-vector")
     
     _set_function(
         project=project,
@@ -100,3 +101,4 @@ def _set_function(
         mlrun_function.with_node_selection(node_name=node_name)
     # Save:
     mlrun_function.save()
+    project.set_function(f"db://{project.name}/{name}", name=name)
