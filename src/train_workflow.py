@@ -131,26 +131,13 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
         ),
         exist_ok=True,
     )
-    # Enable model monitoring. Uncomment lines below if needed 
-    # Create and register TSDB profile
-    tsdb_profile = DatastoreProfileV3io(
-        name="my-v3io-tsdb",
-    )
-    project.register_datastore_profile(tsdb_profile)
-
-    # Create and register stream profile
-    stream_profile = DatastoreProfileV3io(
-        name="my-v3io-stream",
-        v3io_access_key=mlrun.mlconf.get_v3io_access_key(),
-    )
-    project.register_datastore_profile(stream_profile)
 
     # Enable model monitoring
     serving_func.set_tracking()
 
     project.set_model_monitoring_credentials(
-        tsdb_profile_name=tsdb_profile.name,
-        stream_profile_name=stream_profile.name,
+        tsdb_profile_name='fraud-tsdb',
+        stream_profile_name='fraud-stream',
     )
     serving_func.save()
     # deploy the model server, pass a list of trained models to serve

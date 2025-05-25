@@ -16,7 +16,6 @@
 import mlrun
 import os
 from mlrun.datastore.datastore_profile import DatastoreProfileRedis, DatastoreProfileKafkaSource
-from mlrun.datastore.targets import ParquetTarget
 
 def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
     """
@@ -112,9 +111,7 @@ def _set_function(
 
 def _set_datasource(project: mlrun.projects.MlrunProject):
     # If running on community edition - use redis and kafka.
-    if not mlrun.mlconf.is_ce_mode():
-        online_target = 'nosql'
-    else:
+    if mlrun.mlconf.is_ce_mode():
         redis_uri = os.environ.get('REDIS_URI', None)
         redis_user = os.environ.get('REDIS_USER', None)
         redis_password = os.environ.get('REDIS_PASSWORD', None)
@@ -125,7 +122,7 @@ def _set_datasource(project: mlrun.projects.MlrunProject):
         
         # Redis datastore-profile
         data_profile = DatastoreProfileRedis(
-            name="fraud-dataprofile",
+            name="fraud-tsdb",
             endpoint_url=redis_uri,
             username=redis_user,
             password=redis_password,
@@ -140,21 +137,20 @@ def _set_datasource(project: mlrun.projects.MlrunProject):
         )
         project.register_datastore_profile(stream_profile)
 
-        project.params['online_target'] = "ds://fraud-dataprofile"
+        project.params['online_target'] = "ds://fraud-tsdb"
 
-    for fs in ['transactions', 'events', 'labels']:
-        offline_target = ParquetTarget(name='parquet', path=os.path.join(mlrun.mlconf.artifact_path, fs + '.pq'))
-        project.params[fs] = [online_target, offline_target]
+        for fs in ['transactions', 'events', 'labels']:
+            project.params[fs] = os.path.join(mlrun.mlconf.artifact_path, fs + '.pq')
 
-    
-    # dealing with kafka
-    if mlrun.mlconf.is_ce_mode():
+        # dealing with kafka
         kafka_uri = f"{kafka_host}:{kafka_port}"
         transaction_stream = f'kafka://{kafka_uri}?topic=transactions'
         events_stream = f'kafka://{kafka_uri}?topic=events'
+        
     else:
-        transaction_stream = f'v3io:///projects/{project.name}/streams/transaction'
-        events_stream = f'v3io:///projects/{project.name}/streams/events'
+        project.params['transaction_stream'] = f'v3io:///projects/{project.name}/streams/transaction'
+        project.params['events_stream'] = f'v3io:///projects/{project.name}/streams/events'
 
-    project.params['transaction_stream'] = transaction_stream
-    project.params['events_stream'] = events_stream
+    
+    for key, value in project.params.items():
+        project.params[key] = value.replace('{{run.project}}', project.name)
