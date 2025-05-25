@@ -124,7 +124,7 @@ def _set_datasource(project: mlrun.projects.MlrunProject):
         data_profile = DatastoreProfileRedis(
             name="fraud-tsdb",
             endpoint_url=redis_uri,
-            username=redis_user,
+            username=redis_user, 
             password=redis_password,
         )
         project.register_datastore_profile(data_profile)
@@ -144,8 +144,8 @@ def _set_datasource(project: mlrun.projects.MlrunProject):
 
         # dealing with kafka
         kafka_uri = f"{kafka_host}:{kafka_port}"
-        transaction_stream = f'kafka://{kafka_uri}?topic=transactions'
-        events_stream = f'kafka://{kafka_uri}?topic=events'
+        project.params['transaction_stream'] = f'kafka://{kafka_uri}?topic=transactions'
+        project.params['events_stream'] = f'kafka://{kafka_uri}?topic=events'
         
     else:
         project.params['transaction_stream'] = f'v3io:///projects/{project.name}/streams/transaction'
