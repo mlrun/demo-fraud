@@ -148,6 +148,9 @@ def _set_datasource(project: mlrun.projects.MlrunProject):
         project.params['events_stream'] = f'kafka://{kafka_uri}?topic=events'
         
     else:
+        v3io_profile = mlrun.datastore.DatastoreProfileV3io(name="fraud-dataprofile", v3io_access_key=mlrun.mlconf.get_v3io_access_key())
+        project.register_datastore_profile(v3io_profile)
+
         project.params['transaction_stream'] = f'v3io:///projects/{project.name}/streams/transaction'
         project.params['events_stream'] = f'v3io:///projects/{project.name}/streams/events'
 
