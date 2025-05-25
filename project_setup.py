@@ -111,6 +111,9 @@ def _set_function(
 
 def _set_datasource(project: mlrun.projects.MlrunProject):
     # If running on community edition - use redis and kafka.
+    tsdb_profile = mlrun.datastore.DatastoreProfileV3io(name="fraud-dataprofile", v3io_access_key=mlrun.mlconf.get_v3io_access_key())
+    stream_profile = tsdb_profile
+        
     if mlrun.mlconf.is_ce_mode():
         redis_uri = os.environ.get('REDIS_URI', None)
         redis_user = os.environ.get('REDIS_USER', None)
@@ -121,24 +124,19 @@ def _set_datasource(project: mlrun.projects.MlrunProject):
         assert kafka_host is not None, "ERROR - When running on community edition, kafka endpoint is required to run fraud-demo."
         
         # Redis datastore-profile
-        data_profile = DatastoreProfileRedis(
+        tsdb_profile = DatastoreProfileRedis(
             name="fraud-tsdb",
             endpoint_url=redis_uri,
             username=redis_user, 
             password=redis_password,
         )
-        project.register_datastore_profile(data_profile)
-
         # Kafka datastore-profile
         stream_profile = DatastoreProfileKafkaSource(
             name='fraud-stream',
             brokers=f"{kafka_host}:{kafka_port}",
             topics=[],
         )
-        project.register_datastore_profile(stream_profile)
-
         project.params['online_target'] = "ds://fraud-tsdb"
-
         for fs in ['transactions', 'events', 'labels']:
             project.params[fs] = os.path.join(mlrun.mlconf.artifact_path, fs + '.pq')
 
@@ -148,12 +146,11 @@ def _set_datasource(project: mlrun.projects.MlrunProject):
         project.params['events_stream'] = f'kafka://{kafka_uri}?topic=events'
         
     else:
-        v3io_profile = mlrun.datastore.DatastoreProfileV3io(name="fraud-dataprofile", v3io_access_key=mlrun.mlconf.get_v3io_access_key())
-        project.register_datastore_profile(v3io_profile)
-
         project.params['transaction_stream'] = f'v3io:///projects/{project.name}/streams/transaction'
         project.params['events_stream'] = f'v3io:///projects/{project.name}/streams/events'
 
-    
+    project.register_datastore_profile(tsdb_profile)
+    project.register_datastore_profile(stream_profile)
+
     for key, value in project.params.items():
         project.params[key] = value.replace('{{run.project}}', project.name)
