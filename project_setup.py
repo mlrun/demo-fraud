@@ -111,7 +111,7 @@ def _set_function(
 
 def _set_datasource(project: mlrun.projects.MlrunProject):
     # If running on community edition - use redis and kafka.
-    tsdb_profile = mlrun.datastore.DatastoreProfileV3io(name="fraud-dataprofile", v3io_access_key=mlrun.mlconf.get_v3io_access_key())
+    tsdb_profile = mlrun.datastore.DatastoreProfileV3io(name="v3io_dataprofile", v3io_access_key=mlrun.mlconf.get_v3io_access_key())
     stream_profile = tsdb_profile
         
     if mlrun.mlconf.is_ce_mode():
@@ -125,18 +125,18 @@ def _set_datasource(project: mlrun.projects.MlrunProject):
         
         # Redis datastore-profile
         tsdb_profile = DatastoreProfileRedis(
-            name="fraud-tsdb",
+            name="fraud-tsdb-profile",
             endpoint_url=redis_uri,
             username=redis_user, 
             password=redis_password,
         )
         # Kafka datastore-profile
         stream_profile = DatastoreProfileKafkaSource(
-            name='fraud-stream',
+            name='fraud-stream-profile',
             brokers=f"{kafka_host}:{kafka_port}",
             topics=[],
         )
-        project.params['online_target'] = "ds://fraud-tsdb"
+        project.params['online_target'] = "ds://fraud-tsdb-profile"
         for fs in ['transactions', 'events', 'labels']:
             project.params[fs] = os.path.join(mlrun.mlconf.artifact_path, fs + '.pq')
 
