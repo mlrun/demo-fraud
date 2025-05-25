@@ -14,7 +14,9 @@
 
 
 import mlrun
-
+import os
+from mlrun.datastore.datastore_profile import DatastoreProfileRedis, DatastoreProfileKafkaSource
+from mlrun.datastore.targets import ParquetTarget
 
 def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
     """
@@ -74,6 +76,9 @@ def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
     # Set the training workflow:
     project.set_workflow("main", "src/train_workflow.py", embed=True)
 
+    # Set data source for feature store
+    _set_datasource(project)
+    
     # Save and return the project:
     project.save()
     return project
@@ -100,3 +105,52 @@ def _set_function(
         mlrun_function.with_node_selection(node_name=node_name)
     # Save:
     mlrun_function.save()
+
+def _set_datasource(project: mlrun.projects.MlrunProject):
+    # If running on community edition - use redis and kafka.
+    if not mlrun.mlconf.is_ce_mode():
+        online_target = 'nosql'
+    else:
+        redis_uri = os.environ.get('REDIS_URI', None)
+        redis_user = os.environ.get('REDIS_USER', None)
+        redis_password = os.environ.get('REDIS_PASSWORD', None)
+        kafka_host = os.environ.get('KAFKA_SERVICE_HOST', None)
+        kafka_port = os.environ.get('KAFKA_SERVICE_PORT', 9092)
+        assert redis_uri is not None, "ERROR - When running on community edition, redis endpoint is required to run fraud-demo."
+        assert kafka_host is not None, "ERROR - When running on community edition, kafka endpoint is required to run fraud-demo."
+        
+        # Redis datastore-profile
+        data_profile = DatastoreProfileRedis(
+            name="fraud-dataprofile",
+            endpoint_url=redis_uri,
+            username=redis_user,
+            password=redis_password,
+        )
+        project.register_datastore_profile(data_profile)
+
+        # Kafka datastore-profile
+        stream_profile = DatastoreProfileKafkaSource(
+            name='fraud-stream',
+            brokers=f"{kafka_host}:{kafka_port}",
+            topics=[],
+        )
+        project.register_datastore_profile(stream_profile)
+
+        project.params['online_target'] = "ds://fraud-dataprofile"
+
+    for fs in ['transactions', 'events', 'labels']:
+        offline_target = ParquetTarget(name='parquet', path=os.path.join(mlrun.mlconf.artifact_path, fs + '.pq'))
+        project.params[fs] = [online_target, offline_target]
+
+    
+    # dealing with kafka
+    if mlrun.mlconf.is_ce_mode():
+        kafka_uri = f"{kafka_host}:{kafka_port}"
+        transaction_stream = f'kafka://{kafka_uri}?topic=transactions'
+        events_stream = f'kafka://{kafka_uri}?topic=events'
+    else:
+        transaction_stream = f'v3io:///projects/{project.name}/streams/transaction'
+        events_stream = f'v3io:///projects/{project.name}/streams/events'
+
+    project.params['transaction_stream'] = transaction_stream
+    project.params['events_stream'] = events_stream
