@@ -118,7 +118,7 @@ def _set_datasource(project: mlrun.projects.MlrunProject):
         redis_uri = os.environ.get('REDIS_URI', None)
         redis_user = os.environ.get('REDIS_USER', None)
         redis_password = os.environ.get('REDIS_PASSWORD', None)
-        kafka_host = os.environ.get('KAFKA_SERVICE_HOST', None)
+        kafka_host = os.environ.get('KAFKA_SERVICE_HOST', f"kafka-stream.{os.environ.get('MLRUN_NAMESPACE', 'mlrun')}.svc.cluster.local")
         kafka_port = os.environ.get('KAFKA_SERVICE_PORT', 9092)
         assert redis_uri is not None, "ERROR - When running on community edition, redis endpoint is required to run fraud-demo."
         assert kafka_host is not None, "ERROR - When running on community edition, kafka endpoint is required to run fraud-demo."
