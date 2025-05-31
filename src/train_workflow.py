@@ -138,7 +138,7 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
 
     if mlrun.mlconf.is_ce_mode():
         # Use default service
-        tsdb_profile = TDEngineDatastoreProfile(name="fraud-monitoring-tsdb",
+        tsdb_profile = DatastoreProfileTDEngine(name="fraud-monitoring-tsdb",
                                         user='root',
                                         password='taosdata',
                                         host=f"tdengine.{os.environ.get('MLRUN_NAMESPACE', 'mlrun')}.svc.cluster.local",
