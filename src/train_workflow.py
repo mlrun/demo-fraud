@@ -14,9 +14,10 @@
 #
 import mlrun
 from kfp import dsl
+import os
 
 from mlrun.model import HyperParamOptions
-from mlrun.datastore.datastore_profile import DatastoreProfileV3io
+from mlrun.datastore.datastore_profile import DatastoreProfileKafkaSource, DatastoreProfileTDEngine
 
 
 # Create a Kubeflow Pipelines pipeline
@@ -135,10 +136,38 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
     # Enable model monitoring
     serving_func.set_tracking()
 
-    project.set_model_monitoring_credentials(
-        tsdb_profile_name='fraud-tsdb',
-        stream_profile_name='fraud-stream',
-    )
+    if mlrun.mlconf.is_ce_mode():
+        # Use default service
+        tsdb_profile = DatastoreProfileTDEngine(name="fraud-monitoring-tsdb",
+                                        user='root',
+                                        password='taosdata',
+                                        host=f"tdengine.{os.environ.get('MLRUN_NAMESPACE', 'mlrun')}.svc.cluster.local",
+                                        port='6041')
+        project.register_datastore_profile(tsdb_profile)
+
+        kafka_host = os.environ.get('KAFKA_SERVICE_HOST', f"kafka-stream.{os.environ.get('MLRUN_NAMESPACE', 'mlrun')}.svc.cluster.local")
+        kafka_port = os.environ.get('KAFKA_SERVICE_PORT', '9092')
+
+        stream_profile = DatastoreProfileKafkaSource(
+            name='fraud-monitoring-stream',
+            brokers=f"{kafka_host}:{kafka_port}",
+            topics=[],
+        )
+        project.register_datastore_profile(stream_profile)
+
+        project.set_model_monitoring_credentials(
+            tsdb_profile_name=tsdb_profile.name,
+            stream_profile_name=stream_profile.name,
+            replace_creds=True
+        )
+
+    else:
+        project.set_model_monitoring_credentials(
+            tsdb_profile_name='fraud-tsdb',
+            stream_profile_name='fraud-stream',
+            replace_creds=True
+        )
+
     serving_func.save()
     # deploy the model server, pass a list of trained models to serve
     deploy = project.deploy_function(
