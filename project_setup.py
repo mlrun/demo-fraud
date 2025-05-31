@@ -15,7 +15,7 @@
 
 import mlrun
 import os
-from mlrun.datastore.datastore_profile import DatastoreProfileRedis, DatastoreProfileKafkaSource
+from mlrun.datastore.datastore_profile import DatastoreProfileRedis, DatastoreProfileKafkaSource, register_temporary_client_datastore_profile
 
 def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
     """
@@ -144,6 +144,9 @@ def _set_datasource(project: mlrun.projects.MlrunProject):
         kafka_uri = f"{kafka_host}:{kafka_port}"
         project.params['transaction_stream'] = f'kafka://{kafka_uri}?topic=transactions'
         project.params['events_stream'] = f'kafka://{kafka_uri}?topic=events'
+
+        register_temporary_client_datastore_profile(tsdb_profile)
+        register_temporary_client_datastore_profile(stream_profile)
         
     else:
         project.params['transaction_stream'] = f'v3io:///projects/{project.name}/streams/transaction'
@@ -151,6 +154,8 @@ def _set_datasource(project: mlrun.projects.MlrunProject):
 
     project.register_datastore_profile(tsdb_profile)
     project.register_datastore_profile(stream_profile)
+    
 
     for key, value in project.params.items():
         project.params[key] = value.replace('{{run.project}}', project.name)
+        
