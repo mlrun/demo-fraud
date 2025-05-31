@@ -17,7 +17,7 @@ from kfp import dsl
 import os
 
 from mlrun.model import HyperParamOptions
-from mlrun.datastore.datastore_profile import TDEngineDatastoreProfile, DatastoreProfileKafkaSource
+from mlrun.datastore.datastore_profile import DatastoreProfileKafkaSource, DatastoreProfileTDEngine
 
 
 # Create a Kubeflow Pipelines pipeline
