@@ -26,10 +26,11 @@ def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
     """
     # Set the project git source:
     source = project.get_param(key="source")
-    if source:
-        print(f"Project Source: {source}")
-        project.set_source(source=source, pull_at_runtime=True)
-
+    if not source:
+        source = "git://github.com/daniels290813/demo-fraud.git"
+    print(f"Project Source: {source}")
+    project.set_source(source=source, pull_at_runtime=True)
+    
     if project.get_param("pre_load_data"):
         print("pre_load_data")
 
