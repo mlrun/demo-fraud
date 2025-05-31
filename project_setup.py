@@ -27,7 +27,7 @@ def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
     # Set the project git source:
     source = project.get_param(key="source")
     if not source:
-        source = "git://github.com/daniels290813/demo-fraud.git#refs/heads/new_updates"
+        source = "git://github.com/mlrun/demo-fraud.git"
     print(f"Project Source: {source}")
     project.set_source(source=source, pull_at_runtime=True)
     
