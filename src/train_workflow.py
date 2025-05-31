@@ -153,6 +153,7 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
             brokers=f"{kafka_host}:{kafka_port}",
             topics=[],
         )
+        project.register_datastore_profile(stream_profile)
 
         project.set_model_monitoring_credentials(
             tsdb_profile_name=tsdb_profile.name,
