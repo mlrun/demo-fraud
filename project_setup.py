@@ -116,12 +116,18 @@ def _set_datasource(project: mlrun.projects.MlrunProject):
         
     if mlrun.mlconf.is_ce_mode():
         redis_uri = os.environ.get('REDIS_URI', None)
-        redis_user = os.environ.get('REDIS_USER', None)
-        redis_password = os.environ.get('REDIS_PASSWORD', None)
+        redis_user = os.environ.get('REDIS_USER', '')
+        redis_password = os.environ.get('REDIS_PASSWORD', '')
         kafka_host = os.environ.get('KAFKA_SERVICE_HOST', f"kafka-stream.{os.environ.get('MLRUN_NAMESPACE', 'mlrun')}.svc.cluster.local")
-        kafka_port = os.environ.get('KAFKA_SERVICE_PORT', 9092)
+        kafka_port = os.environ.get('KAFKA_SERVICE_PORT', '9092')
         assert redis_uri is not None, "ERROR - When running on community edition, redis endpoint is required to run fraud-demo."
         assert kafka_host is not None, "ERROR - When running on community edition, kafka endpoint is required to run fraud-demo."
+
+        project.set_secrets({'REDIS_URI': redis_uri,
+                             'REDIS_USER': redis_user,
+                             'REDIS_PASSWORD': redis_password,
+                             'KAFKA_SERVICE_HOST':kafka_host,
+                             'KAFKA_SERVICE_PORT': kafka_port})
         
         # Redis datastore-profile
         tsdb_profile = DatastoreProfileRedis(
