@@ -15,7 +15,7 @@
 
 import mlrun
 import os
-from mlrun.datastore.datastore_profile import DatastoreProfileRedis, DatastoreProfileKafkaSource
+from mlrun.datastore.datastore_profile import DatastoreProfileRedis, DatastoreProfileKafkaSource, register_temporary_client_datastore_profile
 
 def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
     """
@@ -26,10 +26,11 @@ def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
     """
     # Set the project git source:
     source = project.get_param(key="source")
-    if source:
-        print(f"Project Source: {source}")
-        project.set_source(source=source, pull_at_runtime=True)
-
+    if not source:
+        source = "git://github.com/mlrun/demo-fraud.git"
+    print(f"Project Source: {source}")
+    project.set_source(source=source, pull_at_runtime=True)
+    
     if project.get_param("pre_load_data"):
         print("pre_load_data")
 
@@ -116,12 +117,18 @@ def _set_datasource(project: mlrun.projects.MlrunProject):
         
     if mlrun.mlconf.is_ce_mode():
         redis_uri = os.environ.get('REDIS_URI', None)
-        redis_user = os.environ.get('REDIS_USER', None)
-        redis_password = os.environ.get('REDIS_PASSWORD', None)
+        redis_user = os.environ.get('REDIS_USER', '')
+        redis_password = os.environ.get('REDIS_PASSWORD', '')
         kafka_host = os.environ.get('KAFKA_SERVICE_HOST', f"kafka-stream.{os.environ.get('MLRUN_NAMESPACE', 'mlrun')}.svc.cluster.local")
-        kafka_port = os.environ.get('KAFKA_SERVICE_PORT', 9092)
+        kafka_port = os.environ.get('KAFKA_SERVICE_PORT', '9092')
         assert redis_uri is not None, "ERROR - When running on community edition, redis endpoint is required to run fraud-demo."
         assert kafka_host is not None, "ERROR - When running on community edition, kafka endpoint is required to run fraud-demo."
+
+        project.set_secrets({'REDIS_URI': redis_uri,
+                             'REDIS_USER': redis_user,
+                             'REDIS_PASSWORD': redis_password,
+                             'KAFKA_SERVICE_HOST':kafka_host,
+                             'KAFKA_SERVICE_PORT': kafka_port})
         
         # Redis datastore-profile
         tsdb_profile = DatastoreProfileRedis(
@@ -144,6 +151,9 @@ def _set_datasource(project: mlrun.projects.MlrunProject):
         kafka_uri = f"{kafka_host}:{kafka_port}"
         project.params['transaction_stream'] = f'kafka://{kafka_uri}?topic=transactions'
         project.params['events_stream'] = f'kafka://{kafka_uri}?topic=events'
+
+        register_temporary_client_datastore_profile(tsdb_profile)
+        register_temporary_client_datastore_profile(stream_profile)
         
     else:
         project.params['transaction_stream'] = f'v3io:///projects/{project.name}/streams/transaction'
@@ -151,6 +161,8 @@ def _set_datasource(project: mlrun.projects.MlrunProject):
 
     project.register_datastore_profile(tsdb_profile)
     project.register_datastore_profile(stream_profile)
+    
 
     for key, value in project.params.items():
         project.params[key] = value.replace('{{run.project}}', project.name)
+        
