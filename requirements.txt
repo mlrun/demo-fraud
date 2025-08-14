@@ -6,3 +6,4 @@ redis
 s3fs
 matplotlib
 plotly
+graphviz
