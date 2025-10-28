@@ -15,7 +15,7 @@
 
 import mlrun
 import os
-from mlrun.datastore.datastore_profile import DatastoreProfileRedis, DatastoreProfileKafkaSource, register_temporary_client_datastore_profile
+from mlrun.datastore.datastore_profile import DatastoreProfileRedis, DatastoreProfileKafkaStream, register_temporary_client_datastore_profile
 
 def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
     """
@@ -138,7 +138,7 @@ def _set_datasource(project: mlrun.projects.MlrunProject):
             password=redis_password,
         )
         # Kafka datastore-profile
-        stream_profile = DatastoreProfileKafkaSource(
+        stream_profile = DatastoreProfileKafkaStream(
             name='fraud-stream',
             brokers=f"{kafka_host}:{kafka_port}",
             topics=[],
