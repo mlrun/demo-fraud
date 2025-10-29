@@ -17,7 +17,7 @@ from kfp import dsl
 import os
 
 from mlrun.model import HyperParamOptions
-from mlrun.datastore.datastore_profile import DatastoreProfileKafkaSource, DatastoreProfileTDEngine
+from mlrun.datastore.datastore_profile import DatastoreProfileKafkaStream, DatastoreProfileTDEngine
 
 
 # Create a Kubeflow Pipelines pipeline
@@ -148,7 +148,7 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
         kafka_host = os.environ.get('KAFKA_SERVICE_HOST', f"kafka-stream.{os.environ.get('MLRUN_NAMESPACE', 'mlrun')}.svc.cluster.local")
         kafka_port = os.environ.get('KAFKA_SERVICE_PORT', '9092')
 
-        stream_profile = DatastoreProfileKafkaSource(
+        stream_profile = DatastoreProfileKafkaStream(
             name='fraud-monitoring-stream',
             brokers=f"{kafka_host}:{kafka_port}",
             topics=[],
