@@ -12,15 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import mlrun
-from kfp import dsl
 import os
 
-from mlrun.model import HyperParamOptions
+import mlrun
+from kfp import dsl
 from mlrun.datastore.datastore_profile import (
     DatastoreProfileKafkaStream,
     DatastoreProfileTDEngine,
 )
+from mlrun.model import HyperParamOptions
 
 
 # Create a Kubeflow Pipelines pipeline

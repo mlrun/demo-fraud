@@ -14,7 +14,6 @@
 #
 import mlrun
 import mlrun.feature_store as fstore
-
 from mlrun.datastore.targets import ParquetTarget
 
 
