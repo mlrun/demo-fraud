@@ -17,7 +17,10 @@ from kfp import dsl
 import os
 
 from mlrun.model import HyperParamOptions
-from mlrun.datastore.datastore_profile import DatastoreProfileKafkaStream, DatastoreProfileTDEngine
+from mlrun.datastore.datastore_profile import (
+    DatastoreProfileKafkaStream,
+    DatastoreProfileTDEngine,
+)
 
 
 # Create a Kubeflow Pipelines pipeline
@@ -34,9 +37,9 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
 
     :returns: None
     """
-    
+
     # Get the project
-    project = mlrun.get_current_project()  
+    project = mlrun.get_current_project()
 
     # Get FeatureVector
     get_vector_func = project.get_function("get-vector")
@@ -50,11 +53,9 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
             "target": {"name": "parquet", "kind": "parquet"},
             "update_stats": True,
         },
-        outputs = [
-            "feature_vector"
-        ]
+        outputs=["feature_vector"],
     )
-    
+
     # Feature selection
     feature_selection_func = project.get_function("feature-selection")
     feature_selection_run = project.run_function(
@@ -138,18 +139,23 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
 
     if mlrun.mlconf.is_ce_mode():
         # Use default service
-        tsdb_profile = DatastoreProfileTDEngine(name="fraud-monitoring-tsdb",
-                                        user='root',
-                                        password='taosdata',
-                                        host=f"tdengine-tsdb.{os.environ.get('MLRUN_NAMESPACE', 'mlrun')}.svc.cluster.local",
-                                        port='6041')
+        tsdb_profile = DatastoreProfileTDEngine(
+            name="fraud-monitoring-tsdb",
+            user="root",
+            password="taosdata",
+            host=f"tdengine-tsdb.{os.environ.get('MLRUN_NAMESPACE', 'mlrun')}.svc.cluster.local",
+            port="6041",
+        )
         project.register_datastore_profile(tsdb_profile)
 
-        kafka_host = os.environ.get('KAFKA_SERVICE_HOST', f"kafka-stream.{os.environ.get('MLRUN_NAMESPACE', 'mlrun')}.svc.cluster.local")
-        kafka_port = os.environ.get('KAFKA_SERVICE_PORT', '9092')
+        kafka_host = os.environ.get(
+            "KAFKA_SERVICE_HOST",
+            f"kafka-stream.{os.environ.get('MLRUN_NAMESPACE', 'mlrun')}.svc.cluster.local",
+        )
+        kafka_port = os.environ.get("KAFKA_SERVICE_PORT", "9092")
 
         stream_profile = DatastoreProfileKafkaStream(
-            name='fraud-monitoring-stream',
+            name="fraud-monitoring-stream",
             brokers=f"{kafka_host}:{kafka_port}",
             topics=[],
         )
@@ -158,14 +164,14 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
         project.set_model_monitoring_credentials(
             tsdb_profile_name=tsdb_profile.name,
             stream_profile_name=stream_profile.name,
-            replace_creds=True
+            replace_creds=True,
         )
 
     else:
         project.set_model_monitoring_credentials(
-            tsdb_profile_name='fraud-tsdb',
-            stream_profile_name='fraud-stream',
-            replace_creds=True
+            tsdb_profile_name="fraud-tsdb",
+            stream_profile_name="fraud-stream",
+            replace_creds=True,
         )
 
     serving_func.save()
