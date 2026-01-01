@@ -139,7 +139,7 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
 
     if mlrun.mlconf.is_ce_mode():
         # Use default service
-        MLRUN_NAMESPACE = os.environ.get('MLRUN_NAMESPACE', 'mlrun')
+        MLRUN_NAMESPACE = os.environ.get("MLRUN_NAMESPACE", "mlrun")
         tsdb_profile = DatastoreProfileTDEngine(
             name="fraud-monitoring-tsdb",
             user="root",
