@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import mlrun
 import mlrun.feature_store as fstore
 from mlrun.datastore.targets import ParquetTarget
 

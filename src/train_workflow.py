@@ -111,7 +111,7 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
 
     # test and visualize your model
     test_func = project.get_function("evaluate")
-    test_run = mlrun.run_function(
+    mlrun.run_function(
         test_func,
         name="evaluate",
         handler="evaluate",
@@ -139,18 +139,19 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
 
     if mlrun.mlconf.is_ce_mode():
         # Use default service
+        MLRUN_NAMESPACE = os.environ.get('MLRUN_NAMESPACE', 'mlrun')
         tsdb_profile = DatastoreProfileTDEngine(
             name="fraud-monitoring-tsdb",
             user="root",
             password="taosdata",
-            host=f"tdengine-tsdb.{os.environ.get('MLRUN_NAMESPACE', 'mlrun')}.svc.cluster.local",
+            host=f"tdengine-tsdb.{MLRUN_NAMESPACE}.svc.cluster.local",
             port="6041",
         )
         project.register_datastore_profile(tsdb_profile)
 
         kafka_host = os.environ.get(
             "KAFKA_SERVICE_HOST",
-            f"kafka-stream.{os.environ.get('MLRUN_NAMESPACE', 'mlrun')}.svc.cluster.local",
+            f"kafka-stream.{MLRUN_NAMESPACE}.svc.cluster.local",
         )
         kafka_port = os.environ.get("KAFKA_SERVICE_PORT", "9092")
 
@@ -176,7 +177,7 @@ def pipeline(vector_name="transactions-fraud", features=[], label_column="is_err
 
     serving_func.save()
     # deploy the model server, pass a list of trained models to serve
-    deploy = project.deploy_function(
+    project.deploy_function(
         serving_func,
         models=[{"key": "fraud", "model_path": train_run.outputs["model"]}],
     ).after(train_run)
