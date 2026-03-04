@@ -15,7 +15,12 @@
 
 import mlrun
 import os
-from mlrun.datastore.datastore_profile import DatastoreProfileRedis, DatastoreProfileKafkaStream, register_temporary_client_datastore_profile
+from mlrun.datastore.datastore_profile import (
+    DatastoreProfileRedis,
+    DatastoreProfileKafkaStream,
+    register_temporary_client_datastore_profile,
+)
+
 
 def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
     """
@@ -30,7 +35,7 @@ def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
         source = "git://github.com/mlrun/demo-fraud.git"
     print(f"Project Source: {source}")
     project.set_source(source=source, pull_at_runtime=True)
-    
+
     if project.get_param("pre_load_data"):
         print("pre_load_data")
 
@@ -38,7 +43,7 @@ def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
     mlrun.get_run_db().get_hub_catalog(source_name="default", force_refresh=True)
 
     # Set the functions:
-    
+
     project.set_function(
         func="src/get_vector.py",
         name="get-vector",
@@ -46,7 +51,7 @@ def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
         kind="job",
     ).save()
     project.set_function(f"db://{project.name}/get-vector", name="get-vector")
-    
+
     _set_function(
         project=project,
         func="hub://feature_selection",
@@ -79,7 +84,7 @@ def setup(project: mlrun.projects.MlrunProject) -> mlrun.projects.MlrunProject:
 
     # Set data source for feature store
     _set_datasource(project)
-    
+
     # Save and return the project:
     project.save()
     return project
@@ -112,57 +117,76 @@ def _set_function(
 
 def _set_datasource(project: mlrun.projects.MlrunProject):
     # If running on community edition - use redis and kafka.
-    tsdb_profile = mlrun.datastore.DatastoreProfileV3io(name="fraud-tsdb", v3io_access_key=mlrun.mlconf.get_v3io_access_key())
-    stream_profile = mlrun.datastore.DatastoreProfileV3io(name="fraud-stream", v3io_access_key=mlrun.mlconf.get_v3io_access_key())
-        
-    if mlrun.mlconf.is_ce_mode():
-        redis_uri = os.environ.get('REDIS_URI', None)
-        redis_user = os.environ.get('REDIS_USER', '')
-        redis_password = os.environ.get('REDIS_PASSWORD', '')
-        kafka_host = os.environ.get('KAFKA_SERVICE_HOST', f"kafka-stream.{os.environ.get('MLRUN_NAMESPACE', 'mlrun')}.svc.cluster.local")
-        kafka_port = os.environ.get('KAFKA_SERVICE_PORT', '9092')
-        assert redis_uri is not None, "ERROR - When running on community edition, redis endpoint is required to run fraud-demo."
-        assert kafka_host is not None, "ERROR - When running on community edition, kafka endpoint is required to run fraud-demo."
+    tsdb_profile = mlrun.datastore.DatastoreProfileV3io(
+        name="fraud-tsdb", v3io_access_key=mlrun.mlconf.get_v3io_access_key()
+    )
+    stream_profile = mlrun.datastore.DatastoreProfileV3io(
+        name="fraud-stream", v3io_access_key=mlrun.mlconf.get_v3io_access_key()
+    )
 
-        project.set_secrets({'REDIS_URI': redis_uri,
-                             'REDIS_USER': redis_user,
-                             'REDIS_PASSWORD': redis_password,
-                             'KAFKA_SERVICE_HOST':kafka_host,
-                             'KAFKA_SERVICE_PORT': kafka_port})
-        
+    if mlrun.mlconf.is_ce_mode():
+        redis_uri = os.environ.get("REDIS_URI", None)
+        redis_user = os.environ.get("REDIS_USER", "")
+        redis_password = os.environ.get("REDIS_PASSWORD", "")
+        kafka_host = os.environ.get(
+            "KAFKA_SERVICE_HOST",
+            f"kafka-stream.{os.environ.get('MLRUN_NAMESPACE', 'mlrun')}.svc.cluster.local",
+        )
+        kafka_port = os.environ.get("KAFKA_SERVICE_PORT", "9092")
+        assert (
+            redis_uri is not None
+        ), "ERROR - When running on community edition, redis endpoint is required to run fraud-demo."
+        assert (
+            kafka_host is not None
+        ), "ERROR - When running on community edition, kafka endpoint is required to run fraud-demo."
+
+        project.set_secrets(
+            {
+                "REDIS_URI": redis_uri,
+                "REDIS_USER": redis_user,
+                "REDIS_PASSWORD": redis_password,
+                "KAFKA_SERVICE_HOST": kafka_host,
+                "KAFKA_SERVICE_PORT": kafka_port,
+            }
+        )
+
         # Redis datastore-profile
         tsdb_profile = DatastoreProfileRedis(
             name="fraud-tsdb",
             endpoint_url=redis_uri,
-            username=redis_user, 
+            username=redis_user,
             password=redis_password,
         )
         # Kafka datastore-profile
         stream_profile = DatastoreProfileKafkaStream(
-            name='fraud-stream',
+            name="fraud-stream",
             brokers=f"{kafka_host}:{kafka_port}",
             topics=[],
         )
-        project.params['online_target'] = "ds://fraud-tsdb"
-        for fs in ['transactions', 'events', 'labels']:
-            project.params[fs] = os.path.join(mlrun.mlconf.artifact_path, fs + '.pq')
+        project.params["online_target"] = "ds://fraud-tsdb"
+        for fs in ["transactions", "events", "labels"]:
+            project.params[fs] = os.path.join(mlrun.mlconf.artifact_path, fs + ".pq")
 
         # dealing with kafka
         kafka_uri = f"{kafka_host}:{kafka_port}"
-        project.params['transaction_stream'] = f'kafka://{kafka_uri}?topic=transactions'
-        project.params['events_stream'] = f'kafka://{kafka_uri}?topic=events'
+        project.params["transaction_stream"] = (
+            f"kafka://{kafka_uri}?topic=transactions"
+        )
+        project.params["events_stream"] = f"kafka://{kafka_uri}?topic=events"
 
         register_temporary_client_datastore_profile(tsdb_profile)
         register_temporary_client_datastore_profile(stream_profile)
-        
+
     else:
-        project.params['transaction_stream'] = f'v3io:///projects/{project.name}/streams/transaction'
-        project.params['events_stream'] = f'v3io:///projects/{project.name}/streams/events'
+        project.params["transaction_stream"] = (
+            f"v3io:///projects/{project.name}/streams/transaction"
+        )
+        project.params["events_stream"] = (
+            f"v3io:///projects/{project.name}/streams/events"
+        )
 
     project.register_datastore_profile(tsdb_profile)
     project.register_datastore_profile(stream_profile)
-    
 
     for key, value in project.params.items():
-        project.params[key] = value.replace('{{run.project}}', project.name)
-        
+        project.params[key] = value.replace("{{run.project}}", project.name)
